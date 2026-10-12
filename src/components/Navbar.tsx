@@ -130,6 +130,21 @@ export function Navbar() {
             </span>
           </div>
 
+          {/* Admin Console shortcut for privileged roles */}
+          {(state.user.role === 'admin' || state.user.role === 'super_admin') && (
+            <Link
+              href="/admin"
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+                pathname.startsWith('/admin')
+                  ? 'bg-amber-500/25 text-amber-300 border-amber-500/50 shadow-sm shadow-amber-500/20'
+                  : 'bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border-amber-500/30'
+              }`}
+            >
+              <Shield className="w-3.5 h-3.5" />
+              <span>Admin</span>
+            </Link>
+          )}
+
           {/* Primary CTA / Dashboard */}
           <Link
             href="/dashboard"

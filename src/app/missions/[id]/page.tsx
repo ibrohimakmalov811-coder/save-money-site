@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { missions } from '@/lib/data/missionsData';
 import { MissionClient } from './MissionClient';
 
@@ -10,7 +10,21 @@ export function generateStaticParams() {
   return missions.map((m) => ({ id: m.id }));
 }
 
-export default async function Page({ params }: PageProps) {
+async function MissionPage({ params }: PageProps) {
   const { id } = await params;
   return <MissionClient id={id} />;
+}
+
+export default function Page({ params }: PageProps) {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[50vh] flex items-center justify-center text-slate-500">
+          Loading mission...
+        </div>
+      }
+    >
+      <MissionPage params={params} />
+    </Suspense>
+  );
 }

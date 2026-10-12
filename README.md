@@ -1,147 +1,130 @@
 # MoneyQuest 🚀
 > **Learn Money Skills. Complete Missions. Build Your Future.**
-> *A professional, fully responsive financial literacy platform for high school students and IT academy learners.*
+> *A professional, fully responsive financial literacy platform with modern dark fintech UI, Supabase authentication, and a 3-tier role-based admin system.*
 
 ---
 
 ## 🌟 Overview
 
-**MoneyQuest** helps young people understand money management through interactive lessons, gamification, realistic financial scenarios, budgeting tools, savings goals, quizzes, and educational challenges.
+**MoneyQuest** empowers high school and IT academy students to understand money management through interactive missions, gamification, realistic financial scenarios, budgeting tools, savings goals, quizzes, and educational challenges.
 
 All simulated cash flows use **Uzbekistani som (UZS)** with student-tailored realistic figures (stipends, lunch canteen costs, tech equipment, transit cards, and internet access).
 
 ---
 
+## 🔐 3-Tier Role-Based Access Control (RBAC) & Security Architecture
+
+MoneyQuest implements enterprise-grade Role-Based Access Control with server-side authorization and PostgreSQL Row Level Security:
+
+| Role | Authority Tier | Capabilities & Scope | Immutability Safeguards |
+| :--- | :--- | :--- | :--- |
+| **`super_admin`** | **Tier 1 (Root Owner)** | Full platform authority (`owner@moneyquest.uz`). Manages administrators, audits, system configuration, maintenance mode, and user standing. | **Strictly Immutable**: Protected by PostgreSQL trigger `prevent_super_admin_tampering` and `prevent_super_admin_deletion`. Cannot be demoted, deleted, or suspended by any admin. |
+| **`admin`** | **Tier 2 (Content Staff)** | Educational content creation & publishing (modules, lessons, interactive quizzes, financial missions). Inspects permitted aggregate KPIs and student directory. | **Bounded**: Cannot manage or promote other admins, cannot tamper with the Super Admin, cannot modify root platform settings. |
+| **`user`** | **Tier 3 (Student Learner)** | Accesses student learning dashboard, missions, 50/30/20 budget calculator, savings goal tracker, life simulator, and scam radar. | **Strict Sandbox**: Default role assigned upon registration. Strictly prevented from privilege escalation via server action validation. |
+
+---
+
 ## 🛠️ Technology Stack
 
-- **Framework**: Next.js 16 (App Router with Partial Prerendering & Server/Client components)
-- **Frontend Library**: React 19 & TypeScript (strict type checking)
-- **Styling & Design System**: Tailwind CSS v4, custom glassmorphism, responsive mobile-first architecture
-- **Charts & Visualizations**: Recharts interactive responsive charts
+- **Framework**: Next.js 16 (App Router with Partial Prerendering & Server Actions)
+- **Frontend Library**: React 19 & TypeScript (strict type checking across all components)
+- **Styling & Design System**: Tailwind CSS v4, custom fintech dark theme (#080D1A, #0F172A, #121A2B), glassmorphism
+- **Charts & Visualizations**: Recharts interactive responsive charts (Area charts, Bar charts, Donut charts)
+- **Validation**: Zod schema validation on both client and server actions
 - **Icons**: Lucide React
-- **Audio Feedback**: Native Web Audio API synthesizer for offline instant gamification feedback
+- **Audio Feedback**: Native Web Audio API synthesizer for instant gamification feedback
 - **Gamification Effects**: Canvas-Confetti celebration triggers
-- **Database & Auth**: Supabase PostgreSQL 15+ with Row Level Security (RLS) policies
-- **Fallback**: Graceful, full-featured Interactive Demo Mode using browser `localStorage` persistence
+- **Database & Auth**: Supabase PostgreSQL 15+ with Row Level Security (RLS) policies and PostgreSQL audit triggers
+- **Fallback / Evaluation Mode**: Full-featured interactive Demo Mode with instant role switching between Owner, Admin, and Student
 
 ---
 
-## 🚀 Key Features
+## 🧭 System Architecture & Routes
 
-### 1. 🎯 Interactive Mission Engine (`/missions`, `/missions/[id]`)
-- **Build Your First Budget**: Interactive allocation of 1,000,000 UZS into Needs, Wants, and Savings using the 50/30/20 rule.
-- **Needs vs. Wants Sorting**: Card sorting exercise classifying 6 real student purchases (Metro pass, battlepass skin, canteen lunch, sneakers, internet, latte).
-- **Save for Your First Laptop**: Mathematical calculation of 6,000,000 UZS savings plan over 5 months vs predatory 42% microloans.
-- **Survive an Unexpected Expense**: Cracked smartphone screen emergency scenario testing reserve funds vs toxic debt.
-- **Spot the Financial Scam**: Inspection of suspicious Telegram bots and identification of 3 red flags.
+### 1. 🎓 Student Experience
+- `/` — Premium fintech landing page with hero, curriculum highlights, feature breakdown, and FAQ.
+- `/dashboard` — Student command center: active missions, XP progress, daily streaks, and quick calculators.
+- `/missions` & `/missions/[id]` — 5 interactive missions (50/30/20 Budgeting, Needs vs Wants, Laptop Savings Plan, Emergency Fund, Scam Detection).
+- `/academy` & `/academy/[slug]` — 8 modular courses with lesson readings and interactive quizzes.
+- `/budget-simulator` — Interactive 50/30/20 budget planner with income presets and Recharts breakdown.
+- `/savings-goals` — Milestones tracker with automated timeline estimates and simulated deposits.
+- `/life-simulator` — 3-month branching decision tree with Cash, Safety buffer, Happiness, and Financial IQ vitals.
+- `/scam-radar` — Fraud radar dissecting phishing SMS, crypto bots, pyramid schemes, and job scams.
+- `/profile` — Student profile, avatar selector, achievement gallery, and language preferences.
 
-### 2. 📊 Smart Budget Simulator (`/budget-simulator`)
-- Real-time calculations: Total planned expenses, unallocated balance, and savings percentage.
-- Recharts distribution pie chart with tooltips and legend.
-- Deficit detection and healthy budget guidance banners.
-- Quick student presets: School Student (600k UZS), University Student (1.2M UZS), IT Intern (2.5M UZS).
-- Save to profile persistence.
+### 2. 🔑 Authentication Subsystem
+- `/login` — Secure sign-in with remembered sessions, validation, and demo role switcher.
+- `/register` — Full registration with Zod validation, live password security checklist (min 8 chars, uppercase, lowercase, number), terms acceptance, and forced `user` role assignment.
+- `/forgot-password` — Privacy-preserving password reset email request.
+- `/reset-password` — Password reset form with complexity verification.
+- `/auth/callback` — Server route handler for Supabase OAuth/magic-link code exchange.
 
-### 3. 🎯 Savings Goal Tracker (`/savings-goals`)
-- Create and track custom student milestones (Refurbished laptop, English exams, emergency buffer).
-- Automated time projections: `ceil((Target - Saved) / Monthly contribution)`.
-- Interactive "Simulate Deposit" button (+100k UZS) with progress bar animations.
-- 100% completion celebration state.
-
-### 4. 🧭 Financial Life Simulator (`/life-simulator`)
-- Signature 3-month branching life simulation:
-  - Month 1: Friend's birthday dinner vs budget boundaries.
-  - Month 2: Laptop charger power surge emergency repair.
-  - Month 3: First paid IT freelance micro-gig.
-- Live Vitals HUD: Cash, Emergency Buffer, Student Happiness Index, and Financial IQ rating.
-
-### 5. 📚 Financial Academy (`/academy`, `/academy/[slug]`)
-- 8 structured curriculum modules:
-  1. Understanding Money & Currency
-  2. Budgeting Fundamentals & 50/30/20 Rule
-  3. Mastering Needs vs. Wants
-  4. Saving Strategies & Emergency Buffers
-  5. Banking Fundamentals & Compound Interest (Rule of 72)
-  6. Inflation: The Hidden Cost
-  7. Responsible Borrowing & Debt Traps
-  8. Recognizing Digital Scams & Card Safety
-- Interactive quizzes with instant scoring and economic explanations.
-
-### 6. 🛡️ Scam Awareness Centre (`/scam-radar`)
-- Threat analysis laboratory dissecting SMS bank phishing, Telegram crypto multiplier bots, referral pyramids, and fake job registration fees.
-
-### 7. 🏆 Gamification System
-- **XP Progression**: Earn XP on missions (40-80 XP), academy quizzes (30-40 XP), and life simulation (100 XP).
-- **5 Meaningful Ranks**:
-  - Level 1: Money Beginner (0–199 XP)
-  - Level 2: Budget Explorer (200–499 XP)
-  - Level 3: Saving Strategist (500–999 XP)
-  - Level 4: Smart Spender (1000–1999 XP)
-  - Level 5: Financial Master (2000+ XP)
-- **Achievements Gallery**: 6 badges (First Step to Wealth, Budget Architect, Goal Setter, Academy Scholar, Scam Detective, Consistent Learner).
-
-### 8. 🌐 Trilingual Support (i18n)
-- Seamless switching between **Uzbek (O'zbekcha)**, **English**, and **Russian (Русский)** via navbar or profile settings.
+### 3. 🛡️ Administration Console (`/admin`)
+- `/admin` — High-level platform health, KPI metrics, recent audit preview, and RBAC architecture summary.
+- `/admin/users` — Searchable user directory with role filters, promote to Admin, revoke admin, suspend/restore accounts, and immutable Super Admin protection.
+- `/admin/content` — Module and lesson manager: create, edit, preview, and archive academy courses.
+- `/admin/missions` — Challenge configuration: adjust XP rewards, difficulty, and add new financial scenarios.
+- `/admin/analytics` — Engagement KPIs with Recharts Area/Bar/Donut charts and CSV export.
+- `/admin/audit-logs` — Tamper-proof activity log viewer with actor, action, timestamp, and JSON payload inspector.
+- `/admin/settings` — Super Admin exclusive root controls: maintenance mode, open registrations, XP multiplier, and database RLS health.
 
 ---
 
-## 💻 Local Development Setup
+## 💻 Local Development & Testing
 
-### 1. Prerequisites
-- Node.js v20+ or v24+
-- npm v10+
-
-### 2. Installation
+### 1. Installation
 ```bash
-# Clone or navigate into the project directory
+# Navigate to project directory
 cd moneyquest
 
 # Install dependencies
 npm install
 ```
 
-### 3. Run Automated Tests
+### 2. Run Automated Test Suite
 ```bash
 npm test
 ```
-Runs the financial and business logic test suite covering currency formatting, safe numeric sanitation, level thresholds, budget deficit calculations, savings timelines, and quiz evaluations.
+Executes two independent test suites:
+1. `tests/financial-logic.test.ts`: UZS currency formatting, numeric sanitation, level math, budget deficit logic, and savings goal projections (6 tests).
+2. `tests/rbac-auth.test.ts`: Zod auth schemas, privilege escalation prevention, Super Admin immutability safeguards, authorized promotions/demotions/suspensions, and audit trail generation (7 tests).
 
-### 4. Start Development Server
+### 3. Development Server
 ```bash
 npm run dev
 ```
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 5. Production Build
+### 4. Production Build
 ```bash
 npm run build
 ```
-Creates an optimized static/partial-prerender production build.
+Generates clean optimized production build with 44 prerendered routes.
 
 ---
 
-## 🗄️ Database & Supabase Setup
+## 🗄️ Database & Supabase Migrations
 
-MoneyQuest works immediately out-of-the-box in **Interactive Demo Mode** without any external dependencies.
+The repository contains two production-ready PostgreSQL migrations in `supabase/migrations/`:
 
-To enable live PostgreSQL authentication and cloud persistence:
-1. Create a free project at [supabase.com](https://supabase.com).
-2. Go to the **SQL Editor** in your Supabase dashboard and run the migration script located at:
-   `supabase/migrations/001_initial_schema.sql`
-3. Copy your project URL and anon public key into `.env.local`:
+1. `001_initial_schema.sql`: Base tables with Row Level Security:
+   - `profiles`, `missions`, `mission_completions`, `lessons`, `quiz_questions`, `quiz_attempts`, `user_progress`, `savings_goals`, `budgets`.
+2. `002_roles_and_admin_system.sql`: Role-Based Access Control and security audit tables:
+   - `user_roles` (`user_id`, `role`, `is_suspended`)
+   - `user_xp_transactions`
+   - `courses` & `admin_audit_logs`
+   - Triggers: `prevent_super_admin_tampering()` and `prevent_super_admin_deletion()`
+   - Procedure: `initialize_super_admin(p_email)`
+
+### To connect a live Supabase project:
+1. Run both SQL files in your Supabase SQL Editor.
+2. In `.env.local`:
    ```env
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key-here
+   SUPER_ADMIN_EMAIL=owner@moneyquest.uz
    ```
-4. Restart your Next.js server (`npm run dev`). The top banner will indicate **"Connected to Supabase (PostgreSQL + RLS)"**.
-
----
-
-## 🔒 Security & Privacy
-
-- **Safe Sandbox**: Zero real banking credentials or account connections.
-- **Minor Protection**: No invasive tracking or public exposure of student financial simulation data.
-- **Row Level Security**: When Supabase is configured, all user rows are strictly isolated using `auth.uid() = user_id`.
+3. Restart `npm run dev`.
 
 ---
 

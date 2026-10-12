@@ -4,11 +4,13 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { calculateLevel, triggerConfetti } from '@/lib/utils';
 import { playSuccessSound, playCoinSound } from '@/lib/sounds';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase/client';
+import { UserRole } from '@/lib/types/admin';
 
 export interface UserProfile {
   id: string;
   displayName: string;
   email: string;
+  role: UserRole;
   isDemo: boolean;
   avatarSeed: string;
 }
@@ -61,7 +63,8 @@ export interface AppContextType {
   depositToGoal: (goalId: string, amount: number) => void;
   deleteSavingsGoal: (goalId: string) => void;
   unlockAchievement: (achievementId: string, xpBonus?: number) => void;
-  loginAsDemoUser: (name: string, email: string) => void;
+  loginAsDemoUser: (name: string, email: string, role?: UserRole) => void;
+  switchDemoRole: (newRole: UserRole) => void;
   logoutUser: () => void;
   resetProgress: () => void;
 }
@@ -71,6 +74,7 @@ const initialDefaultState: AppState = {
     id: 'demo-student-01',
     displayName: 'Jasur Temirov',
     email: 'jasur.student@moneyquest.uz',
+    role: 'user',
     isDemo: true,
     avatarSeed: 'jasur',
   },
@@ -114,7 +118,7 @@ const initialDefaultState: AppState = {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const STORAGE_KEY = 'moneyquest_app_state_v1';
+const STORAGE_KEY = 'moneyquest_app_state_v2';
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AppState>(initialDefaultState);
@@ -129,7 +133,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setState((prev) => ({
           ...prev,
           ...parsed,
-          user: parsed.user || prev.user,
+          user: {
+            ...prev.user,
+            ...(parsed.user || {}),
+            role: parsed.user?.role || prev.user.role || 'user',
+          },
           budget: parsed.budget || prev.budget,
           savingsGoals: parsed.savingsGoals || prev.savingsGoals,
         }));
@@ -175,7 +183,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const completeMission = (missionId: string, xpReward: number): boolean => {
     if (state.completedMissions.includes(missionId)) {
-      return false; // Already claimed prevention
+      return false; // Prevent duplicate claiming
     }
     setState((prev) => {
       const nextCompleted = [...prev.completedMissions, missionId];
@@ -271,15 +279,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
-  const loginAsDemoUser = (name: string, email: string) => {
+  const loginAsDemoUser = (name: string, email: string, explicitRole?: UserRole) => {
+    let resolvedRole: UserRole = explicitRole || 'user';
+    if (!explicitRole) {
+      if (email.toLowerCase().includes('owner') || email.toLowerCase().includes('superadmin')) {
+        resolvedRole = 'super_admin';
+      } else if (email.toLowerCase().includes('admin')) {
+        resolvedRole = 'admin';
+      }
+    }
+
     setState((prev) => ({
       ...prev,
       user: {
         id: `demo-${Date.now()}`,
         displayName: name,
         email: email,
+        role: resolvedRole,
         isDemo: true,
         avatarSeed: name.toLowerCase().replace(/\s+/g, '-'),
+      },
+    }));
+  };
+
+  const switchDemoRole = (newRole: UserRole) => {
+    setState((prev) => ({
+      ...prev,
+      user: {
+        ...prev.user,
+        role: newRole,
       },
     }));
   };
@@ -294,6 +322,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         id: 'guest',
         displayName: 'Guest Student',
         email: 'guest@moneyquest.uz',
+        role: 'user',
         isDemo: true,
         avatarSeed: 'guest',
       },
@@ -324,6 +353,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         deleteSavingsGoal,
         unlockAchievement,
         loginAsDemoUser,
+        switchDemoRole,
         logoutUser,
         resetProgress,
       }}

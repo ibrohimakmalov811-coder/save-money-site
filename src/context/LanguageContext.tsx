@@ -1,32 +1,25 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { SupportedLanguage, LanguageContextType } from '@/lib/i18n/types';
+import React, { createContext, useContext, useState } from 'react';
+import type { SupportedLanguage, LanguageContextType } from '@/lib/i18n/types';
 import { translations } from '@/lib/i18n/translations';
 
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<SupportedLanguage>('en');
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('moneyquest_lang') as SupportedLanguage;
-      if (saved && (saved === 'en' || saved === 'uz' || saved === 'ru')) {
-        setLanguageState(saved);
-      }
-    } catch {
-      // localStorage fallback
-    }
-  }, []);
+export function LanguageProvider({
+  children,
+  initialLanguage,
+}: {
+  children: React.ReactNode;
+  initialLanguage: SupportedLanguage;
+}) {
+  const [language, setLanguageState] = useState<SupportedLanguage>(initialLanguage);
 
   const setLanguage = (lang: SupportedLanguage) => {
     setLanguageState(lang);
-    try {
-      localStorage.setItem('moneyquest_lang', lang);
-    } catch {
-      // ignore
-    }
+    document.cookie = `moneyquest_lang=${lang}; Path=/; Max-Age=31536000; SameSite=Lax${
+      window.location.protocol === 'https:' ? '; Secure' : ''
+    }`;
   };
 
   const t = (key: string): string => {
